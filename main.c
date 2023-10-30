@@ -229,7 +229,7 @@ int main(int argc,char **argv)
 	cache_init();
 	if(load_bpb())
 	{
-		msg(2,"device does not contain FAT32 filesystem,\nfilesystem not changed.\n");
+		msg(2,"device does not contain a FAT32 filesystem,\nfilesystem not changed.\n");
 		cache_flush();
 		return 1;
 	}

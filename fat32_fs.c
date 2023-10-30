@@ -408,7 +408,7 @@ int fat32_scan(struct fat32_pointer *ptr,int is_root,int depth)
 	{
 		if(sb.free_inodes<required_inodes||sb.free_blocks<required_blocks*107/100)
 		{
-			msg(2,"insufficiant space on device,\nfilesystem not changed.\n");
+			msg(2,"insufficient space on device,\nfilesystem not changed.\n");
 			return 1;
 		}
 	}
