@@ -30,7 +30,8 @@ int fat_cache[128];
 int fat_cache_off;
 int fat32_fat_next(int cluster)
 {
-	int block_off,ret;
+	long long int block_off;
+	int ret;
 	cluster&=0xfffffff;
 	block_off=cluster>>7<<7;
 	if(block_off!=fat_cache_off)
@@ -48,7 +49,8 @@ int fat32_fat_next(int cluster)
 }
 void fat32_fat_write(int cluster,int val)
 {
-	int block_off,ret;
+	long long int block_off;
+	int ret;
 	cluster&=0xfffffff;
 	block_off=cluster>>7<<7;
 	if(block_off!=fat_cache_off)
@@ -81,7 +83,7 @@ long long fat_block_off(int cluster)
 	{
 		return -1;
 	}
-	ret=fat32_data_off+(cluster-2)*fat32_cluster_size;
+	ret=fat32_data_off+(long long int)(cluster-2)*fat32_cluster_size;
 	if(ret/fat32_sector_size>=fat32_sectors)
 	{
 		return -1;
@@ -238,11 +240,11 @@ int fat32_read(struct fat32_pointer *ptr,void *buf,int size)
 			s=1;
 		}
 		off=fat_block_off(ptr->current_cluster);
-		if(off==-1)
+		if(off<0)
 		{
 			break;
 		}
-		block_read(buf,off+(ptr->off%fat32_cluster_size),size1);
+		block_read(buf,off+(ptr->off%(unsigned int)fat32_cluster_size),size1);
 		buf=(char *)buf+size1;
 		ret+=size1;
 		ptr->off+=size1;
@@ -406,7 +408,8 @@ int fat32_scan(struct fat32_pointer *ptr,int is_root,int depth)
 	required_blocks+=(dir_size-1>>12)+1;
 	if(is_root)
 	{
-		if(sb.free_inodes<required_inodes||sb.free_blocks<required_blocks*107/100)
+		if(sb.free_inodes<required_inodes||sb.free_blocks<required_blocks*107/100||
+(fat32_data_size-(fat32_dir_size+fat32_cluster_size-1)/fat32_cluster_size)*fat32_cluster_size<required_blocks*4096*107/100)
 		{
 			msg(2,"insufficient space on device,\nfilesystem not changed.\n");
 			return 1;
@@ -433,13 +436,13 @@ int fat32_move_file(int cluster)
 			if(if_block_used_by_ext2(off,fat32_cluster_size))
 			{
 				new_c=fat32_alloc();
-				if(new_c==-1)
+				if(new_c<0)
 				{
 					return -1;
 				}
 				off2=fat_block_off(new_c);
 				block_swap(off,off2,fat32_cluster_size);
-				if(p==-1)
+				if(p<0)
 				{
 					cluster=new_c;
 				}
@@ -467,16 +470,16 @@ int fat32_move_file(int cluster)
 				if((c-2+fat32_data_off/fat32_cluster_size)%align!=index)
 				{
 					new_c=fat32_alloc_align(align,index);
-					if(new_c==-1)
+					if(new_c<0)
 					{
 						new_c=fat32_alloc();
 						++fat32_move_status;
 					}
-					if(new_c!=-1)
+					if(new_c>=0)
 					{
 						off2=fat_block_off(new_c);
 						block_swap(off,off2,fat32_cluster_size);
-						if(p==-1)
+						if(p<0)
 						{
 							cluster=new_c;
 						}

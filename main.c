@@ -15,11 +15,12 @@ void raw_block_write(void *buf,long long off,int size)
 	lseek(fd,off,0);
 	write(fd,buf,size);
 }
-#define CACHE_PAGES 32
+#define CACHE_PAGES 512
 #define CACHE_PAGE_SIZE 4096
 
 long long int cache_off[CACHE_PAGES];
 long long int cache_reads[CACHE_PAGES];
+long long int cache_total_reads;
 int cache_write[CACHE_PAGES];
 unsigned char cache_data[CACHE_PAGES*CACHE_PAGE_SIZE];
 void cache_init(void)
@@ -67,7 +68,7 @@ int cache_load(long long off)
 	i=0;
 	while(i<CACHE_PAGES)
 	{
-		if(cache_off[i]==-1)
+		if(cache_off[i]<0)
 		{
 			cache_off[i]=off;
 			cache_reads[i]=0;
@@ -77,7 +78,7 @@ int cache_load(long long off)
 		}
 		++i;
 	}
-	reads=cache_reads[0];
+	reads=cache_total_reads-cache_reads[0];
 	i1=0;
 	if(cache_write[0]==0)
 	{
@@ -86,7 +87,7 @@ int cache_load(long long off)
 	i=0;
 	while(i<CACHE_PAGES)
 	{
-		if(cache_reads[i]<reads)
+		if(cache_total_reads-cache_reads[i]>reads&&reads!=-1)
 		{
 			i1=i;
 			reads=cache_reads[i];
@@ -104,7 +105,7 @@ int cache_load(long long off)
 		raw_block_write(cache_data+i1*CACHE_PAGE_SIZE,cache_off[i1],CACHE_PAGE_SIZE);
 	}
 	cache_off[i1]=off;
-	cache_reads[i1]=0;
+	cache_reads[i1]=cache_total_reads;
 	cache_write[i1]=0;
 	raw_block_read(cache_data+i1*CACHE_PAGE_SIZE,cache_off[i1],CACHE_PAGE_SIZE);
 	return i1;
@@ -127,7 +128,8 @@ void block_read(void *buf,long long off,int size)
 		size-=size1;
 		off+=size1;
 		buf=(char *)buf+size1;
-		++cache_reads[i];
+		++cache_total_reads;
+		cache_reads[i]=cache_total_reads;
 	}
 }
 void block_write(void *buf,long long off,int size)
@@ -148,6 +150,8 @@ void block_write(void *buf,long long off,int size)
 		size-=size1;
 		off+=size1;
 		buf=(char *)buf+size1;
+		++cache_total_reads;
+		cache_reads[i]=cache_total_reads;
 		cache_write[i]=1;
 	}
 }

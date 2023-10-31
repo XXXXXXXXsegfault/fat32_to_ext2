@@ -856,7 +856,7 @@ Retry:
 			memcpy(&cl,dirent+20,2);
 			cl<<=16;
 			memcpy(&cl,dirent+26,2);
-			memset(&new_inode,0,128);
+			memset(&new_inode,0,sizeof(new_inode));
 			atime=fat32_date_to_unix((unsigned short *)(dirent+18));
 			ctime=fat32_date_to_unix((unsigned short *)(dirent+24))+fat32_time_to_unix((unsigned short *)(dirent+22));
 			crtime=fat32_date_to_unix((unsigned short *)(dirent+16))+fat32_time_to_unix((unsigned short *)(dirent+14));
@@ -937,7 +937,7 @@ Retry:
 int ext2_map_root(void)
 {
 	struct ext2_inode inode;
-	memset(&inode,0,128);
+	memset(&inode,0,sizeof(inode));
 	inode.mode=040755;
 	inode.links=2;
 	inode.size=ext2_map_dir(bpb.root_cluster,2,2,&inode);
