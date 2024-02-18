@@ -415,6 +415,10 @@ int ext2_block_bitmap_get(int block)
 	unsigned int index;
 	group=block/32768;
 	block%=32768;
+	if(gdt[group].free_blocks==0)
+	{
+		return 1;
+	}
 	if(group!=bbitmap_group)
 	{
 		if(bbitmap_group!=0xffffffff)
@@ -455,6 +459,10 @@ int ext2_inode_bitmap_get(int inode)
 	unsigned int index;
 	group=(inode-1)/8192;
 	inode=(inode-1)%8192;
+	if(gdt[group].free_inodes==0)
+	{
+		return 1;
+	}
 	if(group!=ibitmap_group)
 	{
 		if(ibitmap_group!=0xffffffff)
@@ -544,6 +552,23 @@ Retry:
 unsigned int ext2_block_alloc(int group)
 {
 	unsigned int x,x1;
+	int group1;
+	group1=group;
+	do
+	{
+		if(gdt[group].free_blocks)
+		{
+			goto Found;
+		}
+		++group;
+		if(group*32768>=sb.blocks)
+		{
+			group=0;
+		}
+	}
+	while(group1!=group);
+	return 0;
+Found:
 	x=group*32768;
 	x1=x;
 	do
@@ -565,6 +590,23 @@ unsigned int ext2_block_alloc(int group)
 unsigned int ext2_inode_alloc(int group)
 {
 	unsigned int x,x1;
+	int group1;
+	group1=group;
+	do
+	{
+		if(gdt[group].free_inodes)
+		{
+			goto Found;
+		}
+		++group;
+		if(group*32768>=sb.blocks)
+		{
+			group=0;
+		}
+	}
+	while(group1!=group);
+	return 0;
+Found:
 	x=group*8192+1;
 	x1=x;
 	do

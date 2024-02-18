@@ -15,7 +15,7 @@ void raw_block_write(void *buf,long long off,int size)
 	lseek(fd,off,0);
 	write(fd,buf,size);
 }
-#define CACHE_PAGES 512
+#define CACHE_PAGES 8
 #define CACHE_PAGE_SIZE 4096
 
 long long int cache_off[CACHE_PAGES];
